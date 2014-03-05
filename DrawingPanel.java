@@ -11,10 +11,12 @@ import java.awt.Point;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 
 /**
  * How do I set bufferedImage to work? And how do I click in the canvas?
@@ -49,10 +51,16 @@ public class DrawingPanel extends Panel implements MissionExecuter {
 	// Main Panel
 	Panel mainPanel = new Panel();
 
+	// Panel's graphic
+	BufferedImage theImage = new BufferedImage(400, 400,
+			BufferedImage.TYPE_3BYTE_BGR);
+	Graphics panelGraphics;
+
 	public DrawingPanel() {
 		super();
 
 		mainCanvas.setBackground(Color.WHITE);
+		mainCanvas.setForeground(Color.WHITE);
 		mainCanvas.setSize(400, 400);
 
 		shapePanel.add(new Label("Shape"));
@@ -78,6 +86,11 @@ public class DrawingPanel extends Panel implements MissionExecuter {
 		mainPanel.add(ioPanel);
 		this.add(mainPanel, BorderLayout.NORTH);
 		this.add(mainCanvas, BorderLayout.CENTER);
+		panelGraphics = theImage.createGraphics();
+		// color theImage to white
+		panelGraphics.setColor(Color.WHITE);
+		panelGraphics.fillRect(0, 0, mainCanvas.getWidth(),
+				mainCanvas.getHeight());
 
 	}
 
@@ -89,7 +102,7 @@ public class DrawingPanel extends Panel implements MissionExecuter {
 			super(label);
 			this.mi = mi;
 			this.missionNumber = missionNumber;
-			this.addActionListener(this);
+			this.addActionListener(this); // the button listens to itself
 		}
 
 		@Override
@@ -99,57 +112,79 @@ public class DrawingPanel extends Panel implements MissionExecuter {
 
 	}
 
-	// bufferedImage should have the same size as the canvas
-
-	static class MyCanvas extends Canvas {
-		static int mPaintNumber;
-		static Color mColor = Color.BLACK; // default color
-		private Point pt1 = new Point(0, 0);
-		private Point pt2 = new Point(0, 0);
+	class MyCanvas extends Canvas implements MouseListener, MouseMotionListener {
+		int mShape;
+		Point pt1 = new Point(0, 0);
+		Point pt2 = new Point(0, 0);
 
 		public MyCanvas() {
-			addMouseListener(new MouseAdapter() {
-				@Override
-				public void mousePressed(MouseEvent e) {
-					pt1 = new Point(e.getX(), e.getY());
-					System.out.println("1:" + pt1);
-				}
-
-				@Override
-				public void mouseReleased(MouseEvent e) {
-					pt2 = new Point(e.getX(), e.getY());
-					System.out.println("2:" + pt2);
-				}
-
-			});
+			addMouseListener(this); // the canvas listens to itself
 		}
 
 		@Override
 		public void paint(Graphics g) {
-			g.setColor(mColor);
-			switch (mPaintNumber) {
+			g.drawImage(theImage, 0, 0, this);
+		}
+
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			System.out.println("Mouse is clicked");
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			pt1 = new Point(e.getX(), e.getY());
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			pt2 = new Point(e.getX(), e.getY());
+			switch (mShape) {
 			case 1:
-				g.drawLine(pt1.x, pt1.y, pt2.x, pt2.y);
+				panelGraphics.drawLine(mainCanvas.pt1.x, mainCanvas.pt1.y,
+						mainCanvas.pt2.x, mainCanvas.pt2.y);
 				break;
 			case 2:
-				g.drawRect(pt1.x, pt1.y, Math.abs(pt2.x - pt1.x),
-						Math.abs(pt2.y - pt1.y));
-				g.fillRect(pt1.x, pt1.y, Math.abs(pt2.x - pt1.x),
-						Math.abs(pt2.y - pt1.y));
+				panelGraphics.drawRect(mainCanvas.pt1.x, mainCanvas.pt1.y,
+						Math.abs(mainCanvas.pt2.x - mainCanvas.pt1.x),
+						Math.abs(mainCanvas.pt2.y - mainCanvas.pt1.y));
 				break;
 			case 3:
-				g.drawOval(pt1.x, pt1.y, Math.abs(pt2.x - pt1.x),
-						Math.abs(pt2.y - pt1.y));
-				g.fillOval(pt1.x, pt1.y, Math.abs(pt2.x - pt1.x),
-						Math.abs(pt2.y - pt1.y));
+				panelGraphics.drawOval(mainCanvas.pt1.x, mainCanvas.pt1.y,
+						Math.abs(mainCanvas.pt2.x - mainCanvas.pt1.x),
+						Math.abs(mainCanvas.pt2.y - mainCanvas.pt1.y));
 				break;
+
 			default:
 				break;
 			}
+			repaint();
+			pt1.x = 0;
+			pt1.y = 0;
+			pt2.y = 0;
+			pt2.y = 0;
 		}
 
-		public static void setPaintColor(int r, int g, int b) {
-			mColor = new Color(r, g, b);
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			System.out.println("Mouse is in");
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			System.out.println("Mouse is out");
+		}
+
+		// MouseMotionListener
+		@Override
+		public void mouseDragged(MouseEvent e) {
+
+		}
+
+		// MouseMotionListener
+		@Override
+		public void mouseMoved(MouseEvent e) {
+
 		}
 
 	}
@@ -159,34 +194,33 @@ public class DrawingPanel extends Panel implements MissionExecuter {
 		switch (missionNumber) {
 		case 1:
 			System.out.println("Drawing a line");
-			mainCanvas.mPaintNumber = 1;
+			mainCanvas.mShape = 1;
 			break;
 		case 2:
 			System.out.println("Drawing a rectangle");
-			mainCanvas.mPaintNumber = 2;
+			mainCanvas.mShape = 2;
 			break;
 		case 3:
 			System.out.println("Drawing an oval");
-			mainCanvas.mPaintNumber = 3;
+			mainCanvas.mShape = 3;
 			break;
 		case 20:
 			System.out.println("Setting color to dodger blue");
-			MyCanvas.setPaintColor(25, 181, 254);
+			panelGraphics.setColor(new Color(25, 181, 254));
 			break;
 		case 21:
 			System.out.println("Setting color to burnt orange");
-			MyCanvas.setPaintColor(211, 84, 0);
+			panelGraphics.setColor(new Color(211, 84, 0));
 			break;
 		case 22:
 			System.out.println("Setting color to jade green");
-			MyCanvas.setPaintColor(0, 177, 106);
+			panelGraphics.setColor(new Color(0, 177, 106));
 			break;
 		default:
 			System.out.println("clicked");
 			break;
 		}
 
-		mainCanvas.repaint();
 	}
 
 	public static void main(String[] args) {
@@ -207,3 +241,7 @@ public class DrawingPanel extends Panel implements MissionExecuter {
 	}
 
 }
+
+// xor
+// UML code generator
+
